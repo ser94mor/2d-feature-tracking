@@ -38,11 +38,10 @@ public:
 
   class iterator
   {
-  public:
+  private:
     size_t beg_offset_;
     CircularBuffer& db_;
 
-    using underlying_array = std::array<T, N>;
   public:
     using value_type = T;
     using difference_type = ptrdiff_t;
