@@ -48,88 +48,21 @@ public:
     using pointer = T*;
     using reference = T&;
 
-    iterator(const size_t offset, CircularBuffer& db) : beg_offset_{offset}, db_{db}
-    {
+    iterator(size_t offset, CircularBuffer& db);
 
-    }
-
-    reference operator*()
-    {
-      return db_.data_buffer_[db_.Index(beg_offset_)];
-    }
-
-    bool operator==(const iterator& it) const
-    {
-      return &(this->db_) == &(it.db_) and
-             this->beg_offset_ == it.beg_offset_;
-    }
-
-    bool operator!=(const iterator& it) const
-    {
-      return not (*this == it);
-    }
-
-    iterator& operator+=(const difference_type diff)
-    {
-      beg_offset_ += diff;
-      return *this;
-    }
-
-    iterator& operator-=(const difference_type diff)
-    {
-      beg_offset_ -= diff;
-      return *this;
-    }
-
-    iterator& operator++()
-    {
-      *this += 1;
-      return *this;
-    }
-
-    iterator& operator--()
-    {
-      *this -= 1;
-      return *this;
-    }
-
-    iterator operator++(int)
-    {
-      iterator tmp{*this};
-      ++(*this);
-      return tmp;
-    }
-
-    iterator operator--(int)
-    {
-      iterator tmp{*this};
-      --(*this);
-      return tmp;
-    }
-
-    iterator operator+(const difference_type diff)
-    {
-      iterator tmp{*this};
-      tmp += diff;
-      return tmp;
-    }
-
-    iterator operator-(const difference_type diff)
-    {
-      iterator tmp{*this};
-      tmp -= diff;
-      return tmp;
-    }
-
-    difference_type operator-(const iterator& it)
-    {
-      return this->beg_offset_ - it.beg_offset_;
-    }
-
-    pointer operator->()
-    {
-      return &(**this);
-    }
+    reference operator*();
+    bool operator==(const iterator& it) const;
+    bool operator!=(const iterator& it) const;
+    iterator& operator+=(difference_type diff);
+    iterator& operator-=(difference_type diff);
+    iterator& operator++();
+    iterator& operator--();
+    iterator operator++(int);
+    iterator operator--(int);
+    iterator operator+(difference_type diff);
+    iterator operator-(difference_type diff);
+    difference_type operator-(const iterator& it);
+    pointer operator->();
 
   };
 
@@ -153,6 +86,103 @@ private:
   size_t beg_ind_;
   size_t cur_size_;
 };
+
+template<typename T, size_t N>
+CircularBuffer<T, N>::iterator::iterator(const size_t offset, CircularBuffer& db) : beg_offset_{offset}, db_{db}
+{
+
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator*() -> reference
+{
+  return db_.data_buffer_[db_.Index(beg_offset_)];
+}
+
+template<typename T, size_t N>
+bool CircularBuffer<T, N>::iterator::operator==(const iterator& it) const
+{
+  return &(this->db_) == &(it.db_) and
+         this->beg_offset_ == it.beg_offset_;
+}
+
+template<typename T, size_t N>
+bool CircularBuffer<T, N>::iterator::operator!=(const iterator& it) const
+{
+  return not (*this == it);
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator+=(const difference_type diff) -> iterator&
+{
+  beg_offset_ += diff;
+  return *this;
+}
+
+template<typename T, size_t N>
+auto  CircularBuffer<T, N>::iterator::operator-=(const difference_type diff) -> iterator&
+{
+  beg_offset_ -= diff;
+  return *this;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator++() -> iterator&
+{
+  *this += 1;
+  return *this;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator--() -> iterator&
+{
+  *this -= 1;
+  return *this;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator++(int) -> iterator
+{
+  iterator tmp{*this};
+  ++(*this);
+  return tmp;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator--(int) -> iterator
+{
+  iterator tmp{*this};
+  --(*this);
+  return tmp;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator+(const difference_type diff) -> iterator
+{
+  iterator tmp{*this};
+  tmp += diff;
+  return tmp;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator-(const difference_type diff) -> iterator
+{
+  iterator tmp{*this};
+  tmp -= diff;
+  return tmp;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator-(const CircularBuffer::iterator& it) -> difference_type
+{
+  return this->beg_offset_ - it.beg_offset_;
+}
+
+template<typename T, size_t N>
+auto CircularBuffer<T, N>::iterator::operator->() -> pointer
+{
+  return &(**this);
+}
 
 template<typename T, size_t N>
 CircularBuffer<T, N>::CircularBuffer() : data_buffer_{}, beg_ind_{0}, cur_size_{0}
