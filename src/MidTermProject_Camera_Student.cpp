@@ -15,6 +15,7 @@
 
 #include "dataStructures.h"
 #include "matching2D.hpp"
+#include "CircularBuffer.hpp"
 
 using namespace std;
 
@@ -36,8 +37,8 @@ int main(int argc, const char *argv[])
     int imgFillWidth = 4;  // no. of digits which make up the file index (e.g. img-0001.png)
 
     // misc
-    int dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-    vector<DataFrame> dataBuffer; // list of data frames which are held in memory at the same time
+    const size_t dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
+    CircularBuffer<DataFrame, dataBufferSize> dataBuffer; // list of data frames which are held in memory at the same time
     bool bVis = false;            // visualize results
 
     /* MAIN LOOP OVER ALL IMAGES */
