@@ -80,7 +80,7 @@ public:
 
 private:
 
-  inline size_t Index(size_t offset);
+  inline size_t index(size_t offset);
 
   std::array<T, N> data_buffer_;
   size_t beg_ind_;
@@ -96,7 +96,7 @@ CircularBuffer<T, N>::iterator::iterator(const size_t offset, CircularBuffer& db
 template<typename T, size_t N>
 auto CircularBuffer<T, N>::iterator::operator*() -> reference
 {
-  return db_.data_buffer_[db_.Index(beg_offset_)];
+  return db_.data_buffer_[db_.index(beg_offset_)];
 }
 
 template<typename T, size_t N>
@@ -200,12 +200,12 @@ void CircularBuffer<T, N>::push_back(const T& val)
   }
   else
   {
-    beg_ind_ = Index(1);
+    beg_ind_ = index(1);
   }
 }
 
 template<typename T, size_t N>
-size_t CircularBuffer<T, N>::Index(size_t offset)
+size_t CircularBuffer<T, N>::index(size_t offset)
 {
   return (beg_ind_ + offset) % data_buffer_.size();
 }
