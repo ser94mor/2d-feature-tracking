@@ -47,16 +47,74 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 
         extractor = cv::BRISK::create(threshold, octaves, patternScale);
     }
+    else if (descriptorType == "BRIEF")
+    {
+      int bytes = 32;               // legth of the descriptor in bytes
+      bool use_orientation = false; // sample patterns using key points orientation
+
+      extractor = cv::xfeatures2d::BriefDescriptorExtractor::create(bytes, use_orientation);
+    }
+    else if (descriptorType == "ORB")
+    {
+      int   nfeatures = 500;     // The maximum number of features to retain.
+      float scaleFactor = 1.2f;  // Pyramid decimation ratio, greater than 1.
+      int   nlevels = 8;         // The number of pyramid levels.
+      int   edgeThreshold = 31;  // This is size of the border where the features are not detected.
+      int   firstLevel = 0;      // The level of pyramid to put source image to.
+      int   WTA_K = 2;           // The number of points that produce each element of the oriented BRIEF descriptor.
+      auto  scoreType = cv::ORB::HARRIS_SCORE; // HARRIS_SCORE / FAST_SCORE algorithm is used to rank features.
+      int   patchSize = 31;      // Size of the patch used by the oriented BRIEF descriptor.
+      int   fastThreshold = 20;  // The FAST threshold.
+
+      extractor = cv::ORB::create(nfeatures, scaleFactor, nlevels, edgeThreshold,
+                                  firstLevel, WTA_K, scoreType, patchSize, fastThreshold);
+    }
+    else if (descriptorType == "FREAK")
+    {
+      bool orientationNormalized = true; // Enable orientation normalization.
+      bool scaleNormalized = true;       // Enable scale normalization.
+      float patternScale = 22.0f;        // Scaling of the description pattern.
+      int nOctaves = 4;                  // Number of octaves covered by the detected keypoints.
+      const std::vector<int>& selectedPairs = std::vector<int>(); // (Optional) user defined selected pairs indexes.
+
+      extractor = cv::xfeatures2d::FREAK::create(orientationNormalized, scaleNormalized, patternScale,
+                                                 nOctaves, selectedPairs);
+    }
+    else if (descriptorType == "AKAZE")
+    {
+      // Type of the extracted descriptor: DESCRIPTOR_KAZE, DESCRIPTOR_KAZE_UPRIGHT,
+      //                                   DESCRIPTOR_MLDB or DESCRIPTOR_MLDB_UPRIGHT.
+      auto  descriptor_type = cv::AKAZE::DESCRIPTOR_MLDB;
+      int   descriptor_size = 0;        // Size of the descriptor in bits. 0 -> Full size
+      int   descriptor_channels = 3;    // Number of channels in the descriptor (1, 2, 3).
+      float threshold = 0.001f;         //   Detector response threshold to accept point.
+      int   nOctaves = 4;               // Maximum octave evolution of the image.
+      int   nOctaveLayers = 4;          // Default number of sublevels per scale level.
+      auto  diffusivity = cv::KAZE::DIFF_PM_G2; // Diffusivity type. DIFF_PM_G1, DIFF_PM_G2,
+                                                //                   DIFF_WEICKERT or DIFF_CHARBONNIER.
+      extractor = cv::AKAZE::create(descriptor_type, descriptor_size, descriptor_channels,
+                                    threshold, nOctaves, nOctaveLayers, diffusivity);
+    }
+    else if (descriptorType == "SIFT")
+    {
+      int nfeatures = 0; // The number of best features to retain.
+      int nOctaveLayers = 3; // The number of layers in each octave. 3 is the value used in D. Lowe paper.
+      // The contrast threshold used to filter out weak features in semi-uniform (low-contrast) regions.
+      double contrastThreshold = 0.04;
+      double edgeThreshold = 10; // The threshold used to filter out edge-like features.
+      double sigma = 1.6; // The sigma of the Gaussian applied to the input image at the octave \#0.
+
+      extractor = cv::xfeatures2d::SIFT::create(nfeatures, nOctaveLayers, contrastThreshold, edgeThreshold, sigma);
+    }
     else
     {
-
-        //...
+      throw std::invalid_argument("unknown descriptor type: " + descriptorType);
     }
 
     // perform feature description
-    double t = (double)cv::getTickCount();
+    auto t = static_cast<double>(cv::getTickCount());
     extractor->compute(img, keypoints, descriptors);
-    t = ((double)cv::getTickCount() - t) / cv::getTickFrequency();
+    t = (static_cast<double>(cv::getTickCount()) - t) / cv::getTickFrequency();
     cout << descriptorType << " descriptor extraction in " << 1000 * t / 1.0 << " ms" << endl;
 }
 
