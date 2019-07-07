@@ -6,6 +6,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <algorithm>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -83,18 +84,15 @@ int main(int, const char*[])
           detKeypointsModern(keypoints, imgGray, detectorType, bVis);
         }
 
-        //// STUDENT ASSIGNMENT
-        //// TASK MP.3 -> only keep keypoints on the preceding vehicle
-
         // only keep keypoints on the preceding vehicle
         bool bFocusOnVehicle = true;
         cv::Rect vehicleRect(535, 180, 180, 150);
         if (bFocusOnVehicle)
         {
-            // ...
+            keypoints.erase(std::remove_if(keypoints.begin(), keypoints.end(),
+                                           [&vehicleRect](const auto& kp){return not vehicleRect.contains(kp.pt); }),
+                            keypoints.end());
         }
-
-        //// EOF STUDENT ASSIGNMENT
 
         // optional : limit number of keypoints (helpful for debugging and learning)
         bool bLimitKpts = false;
