@@ -39,9 +39,8 @@ void descKeypoints(vector<cv::KeyPoint> &keypoints, cv::Mat &img, cv::Mat &descr
 {
     // select appropriate descriptor
     cv::Ptr<cv::DescriptorExtractor> extractor;
-    if (descriptorType.compare("BRISK") == 0)
+    if (descriptorType == "BRISK")
     {
-
         int threshold = 30;        // FAST/AGAST detection threshold score.
         int octaves = 3;           // detection octaves (use 0 to do single scale)
         float patternScale = 1.0f; // apply this scale to the pattern used for sampling the neighbourhood of a keypoint.
@@ -74,16 +73,16 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     double k = 0.04;
 
     // Apply corner detection
-    double t = (double)cv::getTickCount();
-    vector<cv::Point2f> corners;
+    auto t = static_cast<double>(cv::getTickCount());
+    vector<cv::Point2f> corners{};
     cv::goodFeaturesToTrack(img, corners, maxCorners, qualityLevel, minDistance, cv::Mat(), blockSize, false, k);
 
     // add corners to result vector
-    for (auto it = corners.begin(); it != corners.end(); ++it)
+    for (auto& corner : corners)
     {
 
         cv::KeyPoint newKeyPoint;
-        newKeyPoint.pt = cv::Point2f((*it).x, (*it).y);
+        newKeyPoint.pt = cv::Point2f(corner.x, corner.y);
         newKeyPoint.size = blockSize;
         keypoints.push_back(newKeyPoint);
     }
@@ -95,9 +94,152 @@ void detKeypointsShiTomasi(vector<cv::KeyPoint> &keypoints, cv::Mat &img, bool b
     {
         cv::Mat visImage = img.clone();
         cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
-        string windowName = "Shi-Tomasi Corner Detector Results";
+        std::string windowName = "Shi-Tomasi Corner Detector Results";
         cv::namedWindow(windowName, 6);
         imshow(windowName, visImage);
         cv::waitKey(0);
     }
+}
+
+void detKeypointsHarris(std::vector<cv::KeyPoint>& keypoints, cv::Mat& img, bool bVis)
+{
+  // Detector parameters
+  int blockSize = 2; // for every pixel, a blockSize × blockSize neighborhood is considered
+  int apertureSize = 3; // aperture parameter for Sobel operator (must be odd)
+  int minResponse = 100; // minimum value for a corner in the 8bit scaled response matrix
+  double maxOverlap = 0.0; // max. permissible overlap between two features in %, used during non-maxima suppression
+  double k = 0.04; // Harris parameter
+
+  // Detect Harris corners and normalize output
+  cv::Mat dst, dst_norm, dst_norm_scaled;
+  dst = cv::Mat::zeros(img.size(), CV_32FC1 );
+  cv::cornerHarris( img, dst, blockSize, apertureSize, k, cv::BORDER_DEFAULT );
+  cv::normalize( dst, dst_norm, 0, 255, cv::NORM_MINMAX, CV_32FC1, cv::Mat() );
+  cv::convertScaleAbs( dst_norm, dst_norm_scaled );
+
+  // Look for prominent corners and instantiate keypoints (NMS)
+  for (int j = 0; j < dst_norm.rows; ++j)
+  {
+    for (int i = 0; i < dst_norm.cols; ++i)
+    {
+      int response = static_cast<int>(dst_norm.at<float>(j, i));
+      if (response > minResponse)
+      { // only store points above a threshold
+        cv::KeyPoint newKeyPoint;
+        newKeyPoint.pt = cv::Point2f(i, j);
+        newKeyPoint.size = 2 * apertureSize;
+        newKeyPoint.response = response;
+
+        // perform non-maxima suppression (NMS) in local neighbourhood around new key point
+        bool bOverlap = false;
+        for (auto& keypoint : keypoints)
+        {
+          double kptOverlap = cv::KeyPoint::overlap(newKeyPoint, keypoint);
+          if (kptOverlap > maxOverlap)
+          {
+            bOverlap = true;
+            if (newKeyPoint.response > keypoint.response)
+            {                          // if overlap is >t AND response is higher for new key point
+              keypoint = newKeyPoint;  // replace old key point with new one
+              break;                   // and quit loop over key points
+            }
+          }
+        }
+
+        if (!bOverlap)
+        {                                    // only add new key point if no overlap has been found in previous NMS
+          keypoints.push_back(newKeyPoint);
+        }
+      }
+    } // end of loop over cols
+  } // end of loop over rows
+
+  // visualize results, if requested
+  if (bVis)
+  {
+    cv::Mat visImage = img.clone();
+    cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    std::string windowName = "Harris Corner Detector with a Non-maximum Suppression  Results";
+    cv::namedWindow(windowName, 6);
+    imshow(windowName, visImage);
+    cv::waitKey(0);
+  }
+}
+
+void detKeypointsModern(std::vector<cv::KeyPoint>& keypoints, cv::Mat& img, std::string& detectorType, bool bVis)
+{
+  cv::Ptr<cv::FeatureDetector> detector;
+  if (detectorType == "FAST")
+  {
+    int threshold = 30;    // difference between intensity of the central pixel and pixels of a circle around this pixel
+    bool bNMS = true;      // perform non-maxima suppression on keypoints
+    cv::FastFeatureDetector::DetectorType type = cv::FastFeatureDetector::TYPE_9_16; // TYPE_9_16, TYPE_7_12, TYPE_5_8
+    detector = cv::FastFeatureDetector::create(threshold, bNMS, type);
+  }
+  else if (detectorType == "BRISK")
+  {
+    int threshold = 30;        //   AGAST detection threshold score
+    int octaves = 3;           // detection octaves
+    float patternScale = 1.0f; // apply this scale to the pattern used for sampling the neighbourhood of a keypoint
+    detector = cv::BRISK::create(threshold, octaves, patternScale);
+  }
+  else if (detectorType == "ORB")
+  {
+    int   nfeatures = 500;     // The maximum number of features to retain.
+    float scaleFactor = 1.2f;  // Pyramid decimation ratio, greater than 1.
+    int   nlevels = 8;         // The number of pyramid levels.
+    int   edgeThreshold = 31;  // This is size of the border where the features are not detected.
+    int   firstLevel = 0;      // The level of pyramid to put source image to.
+    int   WTA_K = 2;           // The number of points that produce each element of the oriented BRIEF descriptor.
+    auto  scoreType = cv::ORB::HARRIS_SCORE; // HARRIS_SCORE / FAST_SCORE algorithm is used to rank features.
+    int   patchSize = 31;      // Size of the patch used by the oriented BRIEF descriptor.
+    int   fastThreshold = 20;  // The FAST threshold.
+    detector = cv::ORB::create(nfeatures, scaleFactor, nlevels, edgeThreshold,
+                               firstLevel, WTA_K, scoreType, patchSize, fastThreshold);
+  }
+  else if (detectorType == "AKAZE")
+  {
+    // Type of the extracted descriptor: DESCRIPTOR_KAZE, DESCRIPTOR_KAZE_UPRIGHT,
+    //                                   DESCRIPTOR_MLDB or DESCRIPTOR_MLDB_UPRIGHT.
+    auto  descriptor_type = cv::AKAZE::DESCRIPTOR_MLDB;
+    int   descriptor_size = 0;        // Size of the descriptor in bits. 0 -> Full size
+    int   descriptor_channels = 3;    // Number of channels in the descriptor (1, 2, 3).
+    float threshold = 0.001f;         //   Detector response threshold to accept point.
+    int   nOctaves = 4;               // Maximum octave evolution of the image.
+    int   nOctaveLayers = 4;          // Default number of sublevels per scale level.
+    auto  diffusivity = cv::KAZE::DIFF_PM_G2; // Diffusivity type. DIFF_PM_G1, DIFF_PM_G2,
+                                              //                   DIFF_WEICKERT or DIFF_CHARBONNIER.
+    detector = cv::AKAZE::create(descriptor_type, descriptor_size, descriptor_channels,
+                                 threshold, nOctaves, nOctaveLayers, diffusivity);
+  }
+  else if (detectorType == "SIFT")
+  {
+    int nfeatures = 0; // The number of best features to retain.
+    int nOctaveLayers = 3; // The number of layers in each octave. 3 is the value used in D. Lowe paper.
+    // The contrast threshold used to filter out weak features in semi-uniform (low-contrast) regions.
+    double contrastThreshold = 0.04;
+    double edgeThreshold = 10; // The threshold used to filter out edge-like features.
+    double sigma = 1.6; // The sigma of the Gaussian applied to the input image at the octave \#0.
+
+    detector = cv::xfeatures2d::SIFT::create(nfeatures, nOctaveLayers, contrastThreshold, edgeThreshold, sigma);
+  }
+  else
+  {
+    throw std::invalid_argument("unknown detector type: " + detectorType);
+  }
+
+  auto t = static_cast<double>(cv::getTickCount());
+  detector->detect(img, keypoints);
+  t = (static_cast<double>(cv::getTickCount()) - t) / cv::getTickFrequency();
+  cout << detectorType << " with n= " << keypoints.size() << " keypoints in " << 1000 * t / 1.0 << " ms" << endl;
+
+  if (bVis)
+  {
+    cv::Mat visImage = img.clone();
+    cv::drawKeypoints(img, keypoints, visImage, cv::Scalar::all(-1), cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+    std::string windowName = "FAST Keypoint Detector Results";
+    cv::namedWindow(windowName, 6);
+    imshow(windowName, visImage);
+    cv::waitKey(0);
+  }
 }
