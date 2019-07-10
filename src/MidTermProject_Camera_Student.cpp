@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <vector>
+#include <numeric>
 #include <cmath>
 #include <limits>
 #include <algorithm>
@@ -93,6 +94,21 @@ int main(int, const char*[])
                                            [&vehicleRect](const auto& kp){return not vehicleRect.contains(kp.pt); }),
                             keypoints.end());
         }
+
+        auto mean = std::accumulate(keypoints.begin(), keypoints.end(), 0.0,
+                                    [](const auto sum, const auto& kp2) { return sum + kp2.size; }) / keypoints.size();
+        auto [min_elem, max_elem] =
+            std::minmax_element(keypoints.begin(), keypoints.end(),
+                                [](const auto& kp1, const auto& kp2) { return kp1.size < kp2.size; });
+
+        std::fstream ofs;
+        ofs.open(detectorType + "_keypoints_number.txt", std::ios::app);
+        ofs << keypoints.size() << ' '
+            << min_elem->size   << ' '
+            << max_elem->size   << ' '
+            << mean             << ' '
+            << '\n';
+        ofs.close();
 
         // optional : limit number of keypoints (helpful for debugging and learning)
         bool bLimitKpts = false;
