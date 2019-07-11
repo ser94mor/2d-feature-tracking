@@ -8,7 +8,6 @@
 #include <cmath>
 #include <limits>
 #include <algorithm>
-#include <filesystem>
 
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -135,18 +134,14 @@ int main(int, const char*[])
             std::minmax_element(keypoints.begin(), keypoints.end(),
                                 [](const auto& kp1, const auto& kp2) { return kp1.size < kp2.size; });
 
-            std:string kpn_file_name = detectorType + "_keypoints_number.txt";
-            if (not std::filesystem::exists(kpn_file_name))
-            {
-              std::fstream ofs;
-              ofs.open(kpn_file_name, std::ios::app);
-              ofs << keypoints.size() << ' '
-                  << min_elem->size << ' '
-                  << max_elem->size << ' '
-                  << mean << ' '
-                  << '\n';
-              ofs.close();
-            }
+            std::fstream ofs;
+            ofs.open(unique_prefix + "_keypoints_number.txt", std::ios::app);
+            ofs << keypoints.size() << ' '
+                << min_elem->size << ' '
+                << max_elem->size << ' '
+                << mean << ' '
+                << '\n';
+            ofs.close();
 
             // optional : limit number of keypoints (helpful for debugging and learning)
             bool bLimitKpts = false;
