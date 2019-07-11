@@ -49,24 +49,27 @@ int main(int, const char*[])
     {
       for (size_t descriptor_ind = 0; descriptor_ind < num_of_detectors; ++descriptor_ind)
       {
-        for (size_t matcher_ind = 0; matcher_ind < num_of_matchers; ++matcher_ind)
+        for (auto matcher : matchers)
         {
-          for (size_t selector_id = 0; selector_id < num_of_selectors; ++selector_id)
+          for (auto selector : selectors)
           {
             std::ostringstream oss;
             oss << ToString(detector_ind)     << '_'
                 << ToString(descriptors[descriptor_ind]) << '_'
                 << ToString(CompatibleDescriptorTypes(descriptors[descriptor_ind])[0]) << '_'
-                << ToString(matchers[matcher_ind]) << '_'
-                << ToString(selectors[selector_id]) << '_';
+                << ToString(matcher) << '_'
+                << ToString(selector);
 
             std::string unique_prefix = oss.str();
 
+
+            std::cout << "\n\n\n\n" << unique_prefix<< std::endl;
 
             /* MAIN LOOP OVER ALL IMAGES */
             for (int imgIndex = 0; imgIndex <= imgEndIndex - imgStartIndex; imgIndex++)
             {
               /* LOAD IMAGE INTO BUFFER */
+              std::cout << "Image number is " << imgIndex<< std::endl;
 
               // assemble filenames for current index
               ostringstream imgNumber;
@@ -171,9 +174,9 @@ int main(int, const char*[])
                 /* MATCH KEYPOINT DESCRIPTORS */
 
                 vector<cv::DMatch> matches;
-                Matcher matcher = matchers[matcher_ind];        // MAT_BF, MAT_FLANN
+                // Possible matchers are MAT_BF, MAT_FLANN
                 DescriptorType descriptorType = CompatibleDescriptorTypes(descriptor)[0]; // DES_BINARY, DES_HOG
-                Selector selector = selectors[selector_id];       // SEL_NN, SEL_KNN
+                // Possible selectors are SEL_NN, SEL_KNN
 
                 matchDescriptors((dataBuffer.end() - 2)->keypoints, (dataBuffer.end() - 1)->keypoints,
                                  (dataBuffer.end() - 2)->descriptors, (dataBuffer.end() - 1)->descriptors,
