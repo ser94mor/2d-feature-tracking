@@ -38,20 +38,30 @@ int main(int, const char*[])
   int imgEndIndex = 9;   // last file index to load
   int imgFillWidth = 4;  // no. of digits which make up the file index (e.g. img-0001.png)
 
-  // misc
-  const size_t dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
-  CircularBuffer<DataFrame, dataBufferSize> dataBuffer; // list of data frames which are held in memory at the same time
-  bool bVis = false;            // visualize results
-
 
   for (auto e_detector : detector_array)
   {
     for (auto e_descriptor : descriptor_array)
     {
+      if ((e_descriptor == descriptor_AKAZE && e_detector != detector_AKAZE) ||
+          (e_descriptor == descriptor_ORB   && e_detector == detector_SIFT))
+      {
+        // AKAZE descriptor extractor works only with key-points detected with KAZE/AKAZE detectors
+        // see https://docs.opencv.org/3.0-beta/modules/features2d/doc/feature_detection_and_description.html#akaze
+
+        // ORB descriptor extractor does not work with the SIFT detetor
+        // see https://answers.opencv.org/question/5542/sift-feature-descriptor-doesnt-work-with-orb-keypoinys/
+        continue;
+      }
+
       for (auto e_matcher : matcher_array)
       {
         for (auto e_selector : selector_array)
         {
+          // misc
+          const size_t dataBufferSize = 2;       // no. of images which are held in memory (ring buffer) at the same time
+          CircularBuffer<DataFrame, dataBufferSize> dataBuffer; // list of data frames which are held in memory at the same time
+          bool bVis = false;            // visualize results
 
           std::ostringstream oss;
           oss << ToString(e_detector)     << '_'

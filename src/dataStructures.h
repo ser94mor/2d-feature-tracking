@@ -86,8 +86,9 @@ inline std::vector<DescriptorType> CompatibleDescriptorTypes(const Descriptor de
     case descriptor_ORB:
     case descriptor_FREAK:
     case descriptor_AKAZE:
-    case descriptor_SIFT:
       return { descriptor_type_DES_BINARY, descriptor_type_DES_HOG, };
+    case descriptor_SIFT:
+      return { descriptor_type_DES_HOG, };
     default:
       throw std::logic_error("some descriptors are not presented in the list of 'case' statements");
   }
