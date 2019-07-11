@@ -190,13 +190,8 @@ int main(int, const char*[])
               (dataBuffer.end() - 1)->kptMatches = matches;
 
               std::fstream ofs_matches;
-              ofs_matches.open("matches.txt", std::ios::app);
-              ofs_matches << ToString(e_detector)       << ' '
-                          << ToString(e_descriptor)     << ' '
-                          << ToString(CompatibleDescriptorTypes(e_descriptor)[0]) << ' '
-                          << ToString(e_matcher)        << ' '
-                          << ToString(e_selector)       << ' '
-                          << imgIndex - 1               << ' '
+              ofs_matches.open(unique_prefix + "_matches.txt", std::ios::app);
+              ofs_matches << imgIndex - 1               << ' '
                           << imgIndex                   << ' '
                           << matches.size()             << '\n';
               ofs_matches.close();
