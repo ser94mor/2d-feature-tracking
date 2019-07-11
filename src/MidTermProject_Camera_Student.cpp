@@ -8,6 +8,8 @@
 #include <cmath>
 #include <limits>
 #include <algorithm>
+#include <filesystem>
+
 #include <opencv2/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -133,14 +135,18 @@ int main(int, const char*[])
             std::minmax_element(keypoints.begin(), keypoints.end(),
                                 [](const auto& kp1, const auto& kp2) { return kp1.size < kp2.size; });
 
-            std::fstream ofs;
-            ofs.open(detectorType + "_keypoints_number.txt", std::ios::app);
-            ofs << keypoints.size() << ' '
-                << min_elem->size   << ' '
-                << max_elem->size   << ' '
-                << mean             << ' '
-                << '\n';
-            ofs.close();
+            std:string kpn_file_name = detectorType + "_keypoints_number.txt";
+            if (not std::filesystem::exists(kpn_file_name))
+            {
+              std::fstream ofs;
+              ofs.open(kpn_file_name, std::ios::app);
+              ofs << keypoints.size() << ' '
+                  << min_elem->size << ' '
+                  << max_elem->size << ' '
+                  << mean << ' '
+                  << '\n';
+              ofs.close();
+            }
 
             // optional : limit number of keypoints (helpful for debugging and learning)
             bool bLimitKpts = false;
@@ -187,6 +193,18 @@ int main(int, const char*[])
 
               // store matches in current data frame
               (dataBuffer.end() - 1)->kptMatches = matches;
+
+              std::fstream ofs_matches;
+              ofs_matches.open("matches.txt", std::ios::app);
+              ofs_matches << ToString(e_detector)       << ' '
+                          << ToString(e_descriptor)     << ' '
+                          << ToString(CompatibleDescriptorTypes(e_descriptor)[0]) << ' '
+                          << ToString(e_matcher)        << ' '
+                          << ToString(e_selector)       << ' '
+                          << imgIndex - 1               << ' '
+                          << imgIndex                   << ' '
+                          << matches.size()             << '\n';
+              ofs_matches.close();
 
               cout << "#4 : MATCH KEYPOINT DESCRIPTORS done" << endl;
 
