@@ -20,7 +20,7 @@ To see all the details, open the image above in a new tab and zoom.
 To see all the details, open the image above in a new tab and zoom.
 
 #### Timings Statistics
-![timings_statistics.png](readme_images/timings_statistics.png)
+![timings_statistics.png](readme_images/timings_statistics.png)  
 The values near each box present the mean values.  
 To see all the details, open the image above in a new tab and zoom.
 
